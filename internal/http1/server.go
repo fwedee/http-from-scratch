@@ -8,6 +8,7 @@ import (
 
 func ListenAndServe(addr string, handler http.Handler) error {
 	listener, err := net.Listen("tcp", addr)
+	fmt.Println("Start ListenAndServe")
 	if err != nil {
 		return fmt.Errorf("listen: %w", err)
 	}
@@ -18,12 +19,11 @@ func ListenAndServe(addr string, handler http.Handler) error {
 	}
 
 	for {
-		panic("ListenAndServe: Not implemented")
-		/*
-				Functions that might be useful:
-				* listener.Accept()
-			  * HandleConnection()
-		*/
+		conn, err := listener.Accept()
+		if err != nil {
+			return fmt.Errorf("Error accepting connection: %w", err)
+		}
+		HandleConnection(conn, handler)
 	}
 }
 
