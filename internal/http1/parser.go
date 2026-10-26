@@ -27,15 +27,7 @@ func ParseRequest(reader *bufio.Reader) (*http.Request, error) {
 		return nil, fmt.Errorf("Statuscode is wrong")
 	}
 
-	response2 := Response{
-		Version:    splitResponse[2],
-		StatusCode: statuscode,
-		Resource:   splitResponse[1],
-		Reason:     ""}
-
-	fmt.Print(response2.StatusCode)
-
-	request, err := http.NewRequest("200", splitResponse[1], reader)
+	request, err := http.NewRequest(string(statuscode), splitResponse[1], reader)
 	if err != nil {
 		return nil, fmt.Errorf("Error parsing Request: %w", err)
 	}

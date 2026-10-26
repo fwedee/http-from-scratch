@@ -31,9 +31,21 @@ func ListenAndServe(addr string, handler http.Handler) error {
 func HandleConnection(conn net.Conn, mux http.Handler) error {
 
 	reader := bufio.NewReader(conn)
-	ParseRequest(reader)
 
-	//mux.ServeHTTP()
+	request, err := ParseRequest(reader)
+	if err != nil {
+		return err
+	}
+
+	response := Response{
+		Version:    "test",
+		StatusCode: 200,
+		Resource:   "/",
+		Reason:     ""}
+
+	fmt.Print(response.StatusCode)
+
+	mux.ServeHTTP(&response, request)
 
 	//fmt.Fprintf(conn, "GET / HTTP/1.0\r\n\r\n")
 	return nil
