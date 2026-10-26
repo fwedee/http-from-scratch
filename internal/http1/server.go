@@ -32,6 +32,7 @@ func ListenAndServe(addr string, handler http.Handler) error {
 
 func HandleConnection(conn net.Conn, mux http.Handler) error {
 
+	defer conn.Close()
 	reader := bufio.NewReader(conn)
 	request, err := ParseRequest(reader)
 	log.Printf("Request: %v", request)
