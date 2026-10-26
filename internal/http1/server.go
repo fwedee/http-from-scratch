@@ -34,18 +34,19 @@ func HandleConnection(conn net.Conn, mux http.Handler) error {
 
 	reader := bufio.NewReader(conn)
 	request, err := ParseRequest(reader)
+	log.Printf("Request: %v", request)
 
 	if err != nil {
 		return fmt.Errorf("Error parsing request: %w", err)
 	}
-	fmt.Println("Requestparsing done")
 
+	// Create new Response
 	response := NewResponse(conn)
+	log.Printf("Response: %v", response)
 
 	mux.ServeHTTP(response, request)
-	fmt.Println(response.HTTPVersion)
-	fmt.Println("Success")
 
+	// _, _ = conn.Write([]byte("HTTP/1.1 200 OK\r\n\r\n"))
 	//fmt.Fprintf(conn, "GET / HTTP/1.0\r\n\r\n")
 	return nil
 }

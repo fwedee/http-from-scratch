@@ -2,9 +2,12 @@ package http1
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
+	"strconv"
 	"strings"
 )
 
@@ -16,19 +19,37 @@ func ParseRequest(reader *bufio.Reader) (*http.Request, error) {
 	}
 
 	// Split Statusline, Header and Body
-	splitResponse := strings.Split(rawResponse, "\r\n")
-	statusline := strings.Split(splitResponse[0], " ")
+	statusline := strings.Split(strings.TrimSpace(rawResponse), " ")
+	if len(statusline) < 3 {
+		return nil, errors.New("statusline wrong")
+	}
+	method, url := statusline[0], statusline[1]
 
 	// Debuggin Purpose
-	log.Println("PRINT TESTING")
-	log.Println(statusline[0])
-	log.Println(statusline[1])
-	log.Println(statusline[2])
+	log.Println(method)
+	log.Println(url)
 
-	request, err := http.NewRequest(splitResponse[0], splitResponse[1], reader)
-	if err != nil {
-		return nil, fmt.Errorf("Error parsing Request: %w", err)
+	// Getting Content-Length
+	var contentLength int64
+	for {
+		headerLine, err := reader.ReadString('\n')
+		if err != nil {
+			return nil, err
+		}
+		trimmed := strings.TrimRight(headerLine, "\r\n")
+		if trimmed == "" {
+			break
+		}
+		if strings.HasPrefix(strings.ToLower(trimmed), "content-length:") {
+			val := strings.TrimSpace(trimmed[len("content-length:"):])
+			contentLength, _ = strconv.ParseInt(val, 10, 64)
+		}
 	}
 
-	return request, nil
+	var body io.Reader
+	if contentLength > 0 {
+		body = io.LimitReader(reader, int64(contentLength))
+	}
+
+	return http.NewRequest(method, url, body)
 }
