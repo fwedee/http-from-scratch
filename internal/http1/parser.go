@@ -3,8 +3,8 @@ package http1
 import (
 	"bufio"
 	"fmt"
+	"log"
 	"net/http"
-	"strconv"
 	"strings"
 )
 
@@ -14,21 +14,18 @@ func ParseRequest(reader *bufio.Reader) (*http.Request, error) {
 	if err != nil {
 		return nil, fmt.Errorf("Error not a string: %w", err)
 	}
-	fmt.Println(rawResponse)
 
-	splitResponse := strings.Split(rawResponse, " ")
-	fmt.Println(splitResponse[2])
+	// Split Statusline, Header and Body
+	splitResponse := strings.Split(rawResponse, "\r\n")
+	statusline := strings.Split(splitResponse[0], " ")
 
-	method := splitResponse[0]
-	var statuscode int
+	// Debuggin Purpose
+	log.Println("PRINT TESTING")
+	log.Println(statusline[0])
+	log.Println(statusline[1])
+	log.Println(statusline[2])
 
-	if strings.ToUpper(method) == "GET" {
-		statuscode = 200
-	} else {
-		return nil, fmt.Errorf("Statuscode is wrong")
-	}
-
-	request, err := http.NewRequest(strconv.Itoa(statuscode), splitResponse[1], reader)
+	request, err := http.NewRequest(splitResponse[0], splitResponse[1], reader)
 	if err != nil {
 		return nil, fmt.Errorf("Error parsing Request: %w", err)
 	}
