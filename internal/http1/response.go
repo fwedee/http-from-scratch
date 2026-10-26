@@ -6,6 +6,10 @@ import (
 )
 
 type Response struct {
+	Version    string
+	StatusCode int
+	Reason     string
+	Resource   string
 }
 
 func NewResponse(conn net.Conn) *Response {
