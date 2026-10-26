@@ -6,24 +6,26 @@ import (
 )
 
 type Response struct {
-	Version    string
-	StatusCode int
-	Reason     string
-	Resource   string
+	HTTPVersion    string
+	StatusCode     int
+	ReasonPhrase   string
+	Resource       string
+	connection     net.Conn
+	ResponseHeader http.Header
 }
 
 func NewResponse(conn net.Conn) *Response {
-	panic("NewResponse: Not Implemented")
+	return &Response{connection: conn, ResponseHeader: make(http.Header), StatusCode: 200}
 }
 
 func (r *Response) Header() http.Header {
-	panic("Response.Header: Not Implemented")
+	return r.ResponseHeader
 }
 
 func (r *Response) Write(data []byte) (n int, err error) {
-	panic("Response.Write: Not Implemented")
+	return r.connection.Write(data)
 }
 
 func (r *Response) WriteHeader(statusCode int) {
-	panic("Response.WriteHeader: Not Implemented")
+	r.StatusCode = statusCode
 }

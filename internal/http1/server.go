@@ -21,6 +21,7 @@ func ListenAndServe(addr string, handler http.Handler) error {
 
 	for {
 		conn, err := listener.Accept()
+
 		if err != nil {
 			return fmt.Errorf("Error accepting connection: %w", err)
 		}
@@ -34,18 +35,15 @@ func HandleConnection(conn net.Conn, mux http.Handler) error {
 
 	request, err := ParseRequest(reader)
 	if err != nil {
-		return err
+		return fmt.Errorf("Error parsing request: %w", err)
 	}
+	fmt.Println("Requestparsing done")
 
-	response := Response{
-		Version:    "test",
-		StatusCode: 200,
-		Resource:   "/",
-		Reason:     ""}
+	response := NewResponse(conn)
 
-	fmt.Print(response.StatusCode)
-
-	mux.ServeHTTP(&response, request)
+	mux.ServeHTTP(response, request)
+	fmt.Println(response.HTTPVersion)
+	fmt.Println("Success")
 
 	//fmt.Fprintf(conn, "GET / HTTP/1.0\r\n\r\n")
 	return nil

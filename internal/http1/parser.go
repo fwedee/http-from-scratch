@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 )
 
@@ -27,7 +28,7 @@ func ParseRequest(reader *bufio.Reader) (*http.Request, error) {
 		return nil, fmt.Errorf("Statuscode is wrong")
 	}
 
-	request, err := http.NewRequest(string(statuscode), splitResponse[1], reader)
+	request, err := http.NewRequest(strconv.Itoa(statuscode), splitResponse[1], reader)
 	if err != nil {
 		return nil, fmt.Errorf("Error parsing Request: %w", err)
 	}
