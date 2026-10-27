@@ -45,9 +45,13 @@ func HandleConnection(conn net.Conn, mux http.Handler) error {
 	response := NewResponse(conn)
 	log.Printf("Response: %v", response)
 
+	log.Printf("Received connection on address %s\n", conn.LocalAddr().String())
 	mux.ServeHTTP(response, request)
 
-	// _, _ = conn.Write([]byte("HTTP/1.1 200 OK\r\n\r\n"))
-	//fmt.Fprintf(conn, "GET / HTTP/1.0\r\n\r\n")
+	// for later if I don't want to use ServeHTTP anymore and we need to use our own handler
+	// if _ , err := conn.Write([]byte(response)); err != nil {
+	// 	return fmt.Errorf("Error writing data: %v", err)
+	// }
+
 	return nil
 }
