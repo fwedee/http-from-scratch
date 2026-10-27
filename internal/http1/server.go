@@ -44,29 +44,15 @@ func HandleConnection(conn net.Conn, mux http.Handler) error {
 
 	response := NewResponse(conn)
 	if err != nil {
-		if errors.Is(err, ErrBadRequest) {
-			response.WriteHeader(400)
-			sendErr := response.Send()
-			if sendErr != nil {
-				return sendErr
+		var parseErr *ParseError
+		if errors.As(err, &ParseError) {
+			response.WriteHeader(parseErr.StatusCode)
+			if sendErr := response.Send(); sendErr != nil {
+				return fmt.Errorf("send HTTP error response: %w", sendErr)
 			}
 			return nil
-		} else if errors.Is(err, ErrUnsupportedVersion) {
-			response.WriteHeader(505)
-			sendErr := response.Send()
-			if sendErr != nil {
-				return sendErr
-			}
-			return nil
-		} else {
-			response.WriteHeader(500)
-			sendErr := response.Send()
-			if sendErr != nil {
-				return sendErr
-			}
-			return err
 		}
-
+		return fmt.Errorf("read request error: %w", err)
 	}
 
 	// Create new Response

@@ -62,27 +62,22 @@ func ParseRequest(reader *bufio.Reader) (*http.Request, error) {
 }
 
 func checkHTTPVersion(version string, validHTTPVersion *regexp.Regexp) (string, error) {
-
-	normversion := strings.TrimSpace(version)
-	versionSplit := strings.Split(normversion, "/")
-	if len(versionSplit) != 2 {
-		return "", fmt.Errorf("%w: %s", ErrBadRequest, version)
-	}
-	protocol, protocollversion := versionSplit[0], versionSplit[1]
-	if protocol != "HTTP" {
-		return "", fmt.Errorf("%w: %s", ErrBadRequest, version)
+	if !validHTTPVersion.MatchString(version) {
+		return "", &ParseError{
+			StatusCode: http.StatusBadRequest,
+			Operation:  "parse HTTP version",
+			Err:        fmt.Errorf("malformed version %q", version),
+		}
 	}
 
-	if !validHTTPVersion.MatchString(normversion) {
-		return "", fmt.Errorf("%w: %s", ErrBadRequest, version)
+	if version != "HTTP/1.1" {
+		return "", &ParseError{
+			StatusCode: http.StatusHTTPVersionNotSupported,
+			Operation:  "check HTTP version support",
+			Err:        fmt.Errorf("unsupported version %q", version),
+		}
 	}
-
-	switch protocollversion {
-	case "1.1":
-		return normversion, nil
-	default:
-		return "", fmt.Errorf("%w: %s", ErrUnsupportedVersion, version)
-	}
+	return version, nil
 }
 
 func splitAndTrimSlice(inputs []string) []string {
