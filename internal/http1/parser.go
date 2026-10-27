@@ -57,7 +57,7 @@ func ParseRequest(reader *bufio.Reader) (*http.Request, error) {
 		fieldName := normalizeHeader(headerLines[0])
 
 		// check if is ascii
-		if IsASCII(fieldName) {
+		if !IsASCII(fieldName) {
 			return nil, errors.New("Key needs to be ascii")
 		}
 
