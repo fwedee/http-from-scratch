@@ -29,7 +29,8 @@ func ParseRequest(reader *bufio.Reader) (*http.Request, error) {
 	method, url, httpVersion := statusline[0], statusline[1], statusline[2]
 
 	// Parsing HTTPVersion
-	validVersion, err := checkHTTPVersion(httpVersion)
+	var validHTTPVersion = regexp.MustCompile(`^HTTP/[0-9]\.[0-9]$`)
+	validVersion, err := checkHTTPVersion(httpVersion, validHTTPVersion)
 	if err != nil {
 		return nil, err
 	}
@@ -60,9 +61,7 @@ func ParseRequest(reader *bufio.Reader) (*http.Request, error) {
 	return request, err
 }
 
-func checkHTTPVersion(version string) (string, error) {
-
-	var validHTTPVersion = regexp.MustCompile(`^HTTP/[0-9]\.[0-9]$`)
+func checkHTTPVersion(version string, validHTTPVersion *regexp.Regexp) (string, error) {
 
 	normversion := strings.TrimSpace(version)
 	versionSplit := strings.Split(normversion, "/")

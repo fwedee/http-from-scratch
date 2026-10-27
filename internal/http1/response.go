@@ -1,6 +1,7 @@
 package http1
 
 import (
+	"bytes"
 	"fmt"
 	"net"
 	"net/http"
@@ -14,6 +15,7 @@ type Response struct {
 	connection     net.Conn
 	ResponseHeader http.Header
 	wroteHeader    bool
+	body           bytes.Buffer
 }
 
 func NewResponse(conn net.Conn) *Response {
@@ -28,6 +30,7 @@ func (r *Response) Write(data []byte) (n int, err error) {
 	if !r.wroteHeader {
 		r.WriteHeader(http.StatusOK)
 	}
+	r.body.Write(data)
 	return r.connection.Write(data)
 }
 
@@ -37,13 +40,6 @@ func (r *Response) WriteHeader(statusCode int) {
 	}
 	r.StatusCode = statusCode
 	r.wroteHeader = true
-
-	// ensure connection to be closed
-	// if r.ResponseHeader.Get("Content-Length") == "" && r.ResponseHeader.Get("Transfer-Encoding") == "" {
-	// 	if r.ResponseHeader.Get("Connection") == "" {
-	// 		r.ResponseHeader.Set("Connection", "close")
-	// 	}
-	// }
 
 	statusText := http.StatusText(r.StatusCode)
 	fmt.Fprintf(r.connection, "HTTP/1.1 %d %s\r\n", r.StatusCode, statusText)
