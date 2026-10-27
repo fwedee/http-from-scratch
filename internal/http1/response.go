@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"strconv"
 )
 
 type Response struct {
@@ -48,15 +49,16 @@ func (r *Response) Send() error {
 	if err != nil {
 		return err
 	}
+
+	r.ResponseHeader["Content-Length"] = []string{
+		strconv.Itoa(r.body.Len()),
+	}
+
 	err = r.ResponseHeader.Write(r.connection)
 	if err != nil {
 		return err
 	}
 
-	_, err = fmt.Fprintf(r.connection, "Content-Length: %d\r\n", r.body.Len())
-	if err != nil {
-		return err
-	}
 	_, err = fmt.Fprintf(r.connection, "\r\n")
 	if err != nil {
 		return err
