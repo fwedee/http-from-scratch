@@ -13,7 +13,8 @@ import (
 
 func ParseRequest(reader *bufio.Reader) (*http.Request, error) {
 
-	httpHeader := make(map[string][]string)
+	// httpHeader := make(map[string][]string)
+	httpHeader := make(http.Header)
 
 	rawResponse, err := reader.ReadString('\n')
 	if err != nil {
@@ -48,8 +49,12 @@ func ParseRequest(reader *bufio.Reader) (*http.Request, error) {
 		}
 
 		headerLines := strings.SplitN(trimmed, ":", 2)
+		if len(headerLines) < 2 {
+			return nil, errors.New("Either key or value is missing in HTTP Header")
+		}
+
 		fieldName := headerLines[0]
-		value := headerLines[0:]
+		value := splitAndTrimSlice(headerLines[1:])
 		httpHeader[fieldName] = value
 
 	}
@@ -60,7 +65,25 @@ func ParseRequest(reader *bufio.Reader) (*http.Request, error) {
 	}
 
 	request, err := http.NewRequest(method, url, body)
+	if err != nil {
+		return nil, err
+	}
 	request.Header = httpHeader
 
 	return request, err
+}
+
+func splitAndTrimSlice(inputs []string) []string {
+	var result []string
+
+	for _, item := range inputs {
+		for part := range strings.SplitSeq(item, ",") {
+			trimmed := strings.TrimSpace(part)
+			if trimmed != "" {
+				result = append(result, trimmed)
+			}
+		}
+	}
+
+	return result
 }
