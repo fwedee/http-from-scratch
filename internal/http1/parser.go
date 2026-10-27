@@ -78,7 +78,7 @@ func checkHTTPVersion(version string) (string, error) {
 	case "2.0":
 		return "", fmt.Errorf("%w: %s", ErrUnsupportedVersion, version)
 	default:
-		return "", fmt.Errorf("%w: %s", ErrUnsupportedVersion, version)
+		return "", fmt.Errorf("%w: %s", ErrBadRequest, version)
 	}
 }
 

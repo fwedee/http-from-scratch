@@ -44,13 +44,15 @@ func HandleConnection(conn net.Conn, mux http.Handler) error {
 
 	response := NewResponse(conn)
 	if err != nil {
-		response.WriteHeader(http.StatusBadRequest)
 		if errors.Is(err, ErrBadRequest) {
-			response.StatusCode = 400
+			response.WriteHeader(400)
+			return nil
 		} else if errors.Is(err, ErrUnsupportedVersion) {
-			response.StatusCode = 505
+			response.WriteHeader(505)
+			return nil
 		} else {
-			response.StatusCode = 500
+			response.WriteHeader(500)
+			return err
 		}
 
 	}
