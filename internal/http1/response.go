@@ -41,16 +41,30 @@ func (r *Response) WriteHeader(statusCode int) {
 	r.StatusCode = statusCode
 }
 
-func (r *Response) Send() {
+func (r *Response) Send() error {
 
 	statusText := http.StatusText(r.StatusCode)
-	fmt.Fprintf(r.connection, "HTTP/1.1 %d %s\r\n", r.StatusCode, statusText)
-	fmt.Fprintf(r.connection, "Content-Length: %d\r\n", r.body.Len())
-	fmt.Fprintf(r.connection, "\r\n")
-
-	_, err := r.connection.Write(r.body.Bytes())
+	_, err := fmt.Fprintf(r.connection, "HTTP/1.1 %d %s\r\n", r.StatusCode, statusText)
 	if err != nil {
-
+		return err
 	}
-	r.ResponseHeader.Write(r.connection)
+	err = r.ResponseHeader.Write(r.connection)
+	if err != nil {
+		return err
+	}
+
+	_, err = fmt.Fprintf(r.connection, "Content-Length: %d\r\n", r.body.Len())
+	if err != nil {
+		return err
+	}
+	_, err = fmt.Fprintf(r.connection, "\r\n")
+	if err != nil {
+		return err
+	}
+
+	_, err = r.connection.Write(r.body.Bytes())
+	if err != nil {
+		return err
+	}
+	return nil
 }

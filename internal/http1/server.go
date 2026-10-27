@@ -60,6 +60,11 @@ func HandleConnection(conn net.Conn, mux http.Handler) error {
 	// Create new Response
 	log.Printf("Response: %v", response)
 	mux.ServeHTTP(response, request)
+	err = response.Send()
+	if err != nil {
+		return err
+	}
+
 	// for later if I don't want to use ServeHTTP anymore and we need to use our own handler
 	// if _ , err := conn.Write([]byte(response)); err != nil {
 	// 	return fmt.Errorf("Error writing data: %v", err)
