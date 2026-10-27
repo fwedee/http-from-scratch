@@ -30,8 +30,7 @@ func (r *Response) Write(data []byte) (n int, err error) {
 	if !r.wroteHeader {
 		r.WriteHeader(http.StatusOK)
 	}
-	r.body.Write(data)
-	return r.connection.Write(data)
+	return r.body.Write(data)
 }
 
 func (r *Response) WriteHeader(statusCode int) {
