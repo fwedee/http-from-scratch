@@ -15,6 +15,7 @@ import (
 
 func ParseRequest(reader *bufio.Reader) (*http.Request, error) {
 
+	// Variables for request assignments
 	httpHeader := make(map[string][]string)
 
 	rawResponse, err := reader.ReadString('\n')
@@ -54,16 +55,23 @@ func ParseRequest(reader *bufio.Reader) (*http.Request, error) {
 			return nil, errors.New("Either key or value is missing in HTTP Header")
 		}
 
-		fieldName := normalizeHeader(headerLines[0])
+		fieldName := headerLines[0]
 
 		// check if is ascii
 		if !IsASCII(fieldName) {
-			return nil, errors.New("Key needs to be ascii")
+			return nil, errors.New("Headerkey needs to be ascii")
 		}
+
+		// check if is empty
+		if fieldName == "" {
+			return nil, errors.New("Headerkey is empty")
+		}
+
+		normalizedFieldName := normalizeHeader(fieldName)
 
 		value := strings.TrimSpace(headerLines[1])
 
-		httpHeader[fieldName] = append(httpHeader[fieldName], value)
+		httpHeader[normalizedFieldName] = append(httpHeader[fieldName], value)
 
 	}
 
