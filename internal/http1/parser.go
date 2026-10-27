@@ -60,7 +60,7 @@ func ParseRequest(reader *bufio.Reader) (*http.Request, error) {
 }
 
 func checkHTTPVersion(version string) (string, error) {
-	normversion := strings.ToUpper(strings.TrimSpace(version))
+	normversion := strings.TrimSpace(version)
 	versionSplit := strings.Split(normversion, "/")
 	if len(versionSplit) != 2 {
 		return "", errors.New("Either the protocoll or the version is missing")
