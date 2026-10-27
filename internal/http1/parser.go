@@ -15,59 +15,27 @@ import (
 
 func ParseRequest(reader *bufio.Reader) (*http.Request, error) {
 
-	// Variables for request assignments
-	httpHeader := make(map[string][]string)
-
 	rawResponse, err := reader.ReadString('\n')
 	if err != nil {
 		return nil, fmt.Errorf("Error not a string: %w", err)
 	}
 
-	// Split Statusline, httpHeader and Body
+	// Split Statusline
 	statusline := strings.Split(strings.TrimSpace(rawResponse), " ")
 	if len(statusline) < 3 {
 		return nil, errors.New("statusline wrong")
 	}
-	method, url := statusline[0], statusline[1]
+	method, url, httpVersion := statusline[0], statusline[1], statusline[2]
 
 	// Debuggin Purpose
 	log.Println(method)
+	log.Println(httpVersion)
 	log.Println(url)
 
-	// Getting Content-Length
-	var contentLength int64
-	for {
-		headerLine, err := reader.ReadString('\n')
-		if err != nil {
-			return nil, err
-		}
-		trimmed := strings.TrimRight(headerLine, "\r\n")
-		if trimmed == "" {
-			break
-		}
-		if strings.HasPrefix(strings.ToLower(trimmed), "content-length:") {
-			val := strings.TrimSpace(trimmed[len("content-length:"):])
-			contentLength, _ = strconv.ParseInt(val, 10, 64)
-		}
-
-		headerLines := strings.SplitN(trimmed, ":", 2)
-		if len(headerLines) < 2 {
-			return nil, errors.New("Either key or value is missing in HTTP Header")
-		}
-
-		fieldName := headerLines[0]
-
-		// check if is ascii
-		if !validHeader(fieldName) {
-			return nil, errors.New("Header is not valid")
-		}
-
-		normalizedFieldName := normalizeHeader(fieldName)
-
-		value := strings.TrimSpace(headerLines[1])
-
-		httpHeader[normalizedFieldName] = append(httpHeader[normalizedFieldName], value)
-
+	// Parsing httpHeader and getting Content-Length of body
+	httpHeader, contentLength, err := parsingHeader(*reader)
+	if err != nil {
+		return nil, fmt.Errorf("Header parsing went wrong: %w", err)
 	}
 
 	var body io.Reader
@@ -97,6 +65,45 @@ func splitAndTrimSlice(inputs []string) []string {
 	}
 
 	return result
+}
+
+func parsingHeader(reader bufio.Reader) (map[string][]string, int64, error) {
+	httpHeader := make(map[string][]string)
+	var contentLength int64
+	for {
+		headerLine, err := reader.ReadString('\n')
+		if err != nil {
+			return nil, 0, err
+		}
+		trimmed := strings.TrimRight(headerLine, "\r\n")
+		if trimmed == "" {
+			break
+		}
+		if strings.HasPrefix(strings.ToLower(trimmed), "content-length:") {
+			val := strings.TrimSpace(trimmed[len("content-length:"):])
+			contentLength, _ = strconv.ParseInt(val, 10, 64)
+		}
+
+		headerLines := strings.SplitN(trimmed, ":", 2)
+		if len(headerLines) < 2 {
+			return nil, 0, errors.New("Either key or value is missing in HTTP Header")
+		}
+
+		fieldName := headerLines[0]
+
+		// check if is ascii
+		if !validHeader(fieldName) {
+			return nil, 0, errors.New("Header is not valid")
+		}
+
+		normalizedFieldName := normalizeHeader(fieldName)
+
+		value := strings.TrimSpace(headerLines[1])
+
+		httpHeader[normalizedFieldName] = append(httpHeader[normalizedFieldName], value)
+
+	}
+	return httpHeader, contentLength, nil
 }
 
 func normalizeHeader(input string) string {
