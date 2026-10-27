@@ -17,6 +17,7 @@ type Response struct {
 	ResponseHeader http.Header
 	wroteHeader    bool
 	body           bytes.Buffer
+	requestMethod  string
 }
 
 func NewResponse(conn net.Conn) *Response {
@@ -62,6 +63,10 @@ func (r *Response) Send() error {
 	_, err = fmt.Fprintf(r.connection, "\r\n")
 	if err != nil {
 		return err
+	}
+
+	if r.requestMethod == http.MethodHead || r.body.Len() == 0 {
+		return nil
 	}
 
 	_, err = r.connection.Write(r.body.Bytes())
