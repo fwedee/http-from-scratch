@@ -71,7 +71,7 @@ func ParseRequest(reader *bufio.Reader) (*http.Request, error) {
 
 		value := strings.TrimSpace(headerLines[1])
 
-		httpHeader[normalizedFieldName] = append(httpHeader[fieldName], value)
+		httpHeader[normalizedFieldName] = append(httpHeader[normalizedFieldName], value)
 
 	}
 
