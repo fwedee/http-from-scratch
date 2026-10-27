@@ -39,11 +39,11 @@ func (r *Response) WriteHeader(statusCode int) {
 	r.wroteHeader = true
 
 	// ensure connection to be closed
-	if r.ResponseHeader.Get("Content-Length") == "" && r.ResponseHeader.Get("Transfer-Encoding") == "" {
-		if r.ResponseHeader.Get("Connection") == "" {
-			r.ResponseHeader.Set("Connection", "close")
-		}
-	}
+	// if r.ResponseHeader.Get("Content-Length") == "" && r.ResponseHeader.Get("Transfer-Encoding") == "" {
+	// 	if r.ResponseHeader.Get("Connection") == "" {
+	// 		r.ResponseHeader.Set("Connection", "close")
+	// 	}
+	// }
 
 	statusText := http.StatusText(r.StatusCode)
 	fmt.Fprintf(r.connection, "HTTP/1.1 %d %s\r\n", r.StatusCode, statusText)

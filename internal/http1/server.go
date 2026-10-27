@@ -31,11 +31,15 @@ func ListenAndServe(addr string, handler http.Handler) error {
 }
 
 func HandleConnection(conn net.Conn, mux http.Handler) error {
-
-	defer conn.Close()
+	defer func() {
+		err := conn.Close()
+		if err != nil {
+			fmt.Printf("Error closing connection: %v \n", err)
+		}
+	}()
 	reader := bufio.NewReader(conn)
 	request, err := ParseRequest(reader)
-	log.Printf("Request: %v", request)
+	log.Printf("Received connection on address %s\n", conn.LocalAddr().String())
 
 	if err != nil {
 		return fmt.Errorf("Error parsing request: %w", err)
@@ -45,13 +49,12 @@ func HandleConnection(conn net.Conn, mux http.Handler) error {
 	response := NewResponse(conn)
 	log.Printf("Response: %v", response)
 
-	log.Printf("Received connection on address %s\n", conn.LocalAddr().String())
 	mux.ServeHTTP(response, request)
-
 	// for later if I don't want to use ServeHTTP anymore and we need to use our own handler
 	// if _ , err := conn.Write([]byte(response)); err != nil {
 	// 	return fmt.Errorf("Error writing data: %v", err)
 	// }
+	//
 
 	return nil
 }
