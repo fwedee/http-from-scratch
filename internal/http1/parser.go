@@ -55,9 +55,15 @@ func ParseRequest(reader *bufio.Reader) (*http.Request, error) {
 		}
 
 		fieldName := normalizeHeader(headerLines[0])
-		value := splitAndTrimSlice(headerLines[1:])
 
-		httpHeader[fieldName] = append(httpHeader[fieldName], value...)
+		// check if is ascii
+		if IsASCII(fieldName) {
+			return nil, errors.New("Key needs to be ascii")
+		}
+
+		value := strings.TrimSpace(headerLines[1])
+
+		httpHeader[fieldName] = append(httpHeader[fieldName], value)
 
 	}
 
@@ -105,4 +111,13 @@ func uppercaseFirst(s string) string {
 		return s
 	}
 	return string(unicode.ToUpper(r)) + s[size:]
+}
+
+func IsASCII(s string) bool {
+	for i := 0; i < len(s); i++ {
+		if s[i] > unicode.MaxASCII {
+			return false
+		}
+	}
+	return true
 }
