@@ -46,22 +46,22 @@ func HandleConnection(conn net.Conn, mux http.Handler) error {
 	if err != nil {
 		if errors.Is(err, ErrBadRequest) {
 			response.WriteHeader(400)
-			err = response.Send()
-			if err != nil {
+			sendErr := response.Send()
+			if sendErr != nil {
 				return err
 			}
 			return nil
 		} else if errors.Is(err, ErrUnsupportedVersion) {
 			response.WriteHeader(505)
-			err = response.Send()
-			if err != nil {
+			sendErr := response.Send()
+			if sendErr != nil {
 				return err
 			}
 			return nil
 		} else {
 			response.WriteHeader(500)
-			err = response.Send()
-			if err != nil {
+			sendErr := response.Send()
+			if sendErr != nil {
 				return err
 			}
 			return err
