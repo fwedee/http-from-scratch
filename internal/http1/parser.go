@@ -9,12 +9,13 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"unicode"
+	"unicode/utf8"
 )
 
 func ParseRequest(reader *bufio.Reader) (*http.Request, error) {
 
-	// httpHeader := make(map[string][]string)
-	httpHeader := make(http.Header)
+	httpHeader := make(map[string][]string)
 
 	rawResponse, err := reader.ReadString('\n')
 	if err != nil {
@@ -53,9 +54,10 @@ func ParseRequest(reader *bufio.Reader) (*http.Request, error) {
 			return nil, errors.New("Either key or value is missing in HTTP Header")
 		}
 
-		fieldName := headerLines[0]
+		fieldName := normalizeHeader(headerLines[0])
 		value := splitAndTrimSlice(headerLines[1:])
-		httpHeader[fieldName] = value
+
+		httpHeader[fieldName] = append(httpHeader[fieldName], value...)
 
 	}
 
@@ -86,4 +88,21 @@ func splitAndTrimSlice(inputs []string) []string {
 	}
 
 	return result
+}
+
+func normalizeHeader(input string) string {
+	lowerCase := strings.ToLower(input)
+	parts := strings.Split(lowerCase, "-")
+	for i, p := range parts {
+		parts[i] = uppercaseFirst(p)
+	}
+	return strings.Join(parts, "-")
+}
+
+func uppercaseFirst(s string) string {
+	r, size := utf8.DecodeRuneInString(s)
+	if r == utf8.RuneError || size == 0 {
+		return s
+	}
+	return string(unicode.ToUpper(r)) + s[size:]
 }
