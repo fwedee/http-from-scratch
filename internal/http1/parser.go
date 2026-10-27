@@ -27,9 +27,16 @@ func ParseRequest(reader *bufio.Reader) (*http.Request, error) {
 	}
 	method, url, httpVersion := statusline[0], statusline[1], statusline[2]
 
+	// Parsing HTTPVersion
+	validVersion, err := checkHTTPVersion(httpVersion)
+	if err != nil {
+		return nil, err
+	}
+
 	// Debuggin Purpose
 	log.Println(method)
 	log.Println(httpVersion)
+	log.Println(validVersion)
 	log.Println(url)
 
 	// Parsing httpHeader and getting Content-Length of body
@@ -50,6 +57,29 @@ func ParseRequest(reader *bufio.Reader) (*http.Request, error) {
 	request.Header = httpHeader
 
 	return request, err
+}
+
+func checkHTTPVersion(version string) (string, error) {
+	normversion := strings.ToUpper(strings.TrimSpace(version))
+	versionSplit := strings.Split(normversion, "/")
+	if len(versionSplit) != 2 {
+		return "", error
+	}
+	protocol, protocollversion := versionSplit[0], versionSplit[1]
+	if protocol != "HTTP" {
+		return "", errors.New(protocol + " is not supported, just HTTP")
+	}
+
+	switch protocollversion {
+	case "1.1":
+		return normversion, nil
+	case "1.0":
+		return "", errors.New(protocollversion + " is not supported as HTTP Protocoll version just HTTP/1.1")
+	case "2.0":
+		return "", errors.New(protocollversion + " is not supported as HTTP Protocoll version just HTTP/1.1")
+	default:
+		return "", errors.New(protocollversion + " is not supported as HTTP Protocoll version just HTTP/1.1")
+	}
 }
 
 func splitAndTrimSlice(inputs []string) []string {
