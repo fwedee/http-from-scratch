@@ -7,6 +7,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"regexp"
 	"strconv"
 	"strings"
 	"unicode"
@@ -60,25 +61,28 @@ func ParseRequest(reader *bufio.Reader) (*http.Request, error) {
 }
 
 func checkHTTPVersion(version string) (string, error) {
+
+	var validHTTPVersion = regexp.MustCompile(`^HTTP/[0-9]\.[0-9]$`)
+
 	normversion := strings.TrimSpace(version)
 	versionSplit := strings.Split(normversion, "/")
 	if len(versionSplit) != 2 {
-		return "", errors.New("Either the protocoll or the version is missing")
+		return "", fmt.Errorf("%w: %s", ErrBadRequest, version)
 	}
 	protocol, protocollversion := versionSplit[0], versionSplit[1]
 	if protocol != "HTTP" {
-		return "", errors.New(protocol + " is not supported, just HTTP")
+		return "", fmt.Errorf("%w: %s", ErrBadRequest, version)
+	}
+
+	if !validHTTPVersion.MatchString(normversion) {
+		return "", fmt.Errorf("%w: %s", ErrBadRequest, version)
 	}
 
 	switch protocollversion {
 	case "1.1":
 		return normversion, nil
-	case "1.0":
-		return "", fmt.Errorf("%w: %s", ErrUnsupportedVersion, version)
-	case "2.0":
-		return "", fmt.Errorf("%w: %s", ErrUnsupportedVersion, version)
 	default:
-		return "", fmt.Errorf("%w: %s", ErrBadRequest, version)
+		return "", fmt.Errorf("%w: %s", ErrUnsupportedVersion, version)
 	}
 }
 
