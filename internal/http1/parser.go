@@ -58,13 +58,8 @@ func ParseRequest(reader *bufio.Reader) (*http.Request, error) {
 		fieldName := headerLines[0]
 
 		// check if is ascii
-		if !IsASCII(fieldName) {
-			return nil, errors.New("Headerkey needs to be ascii")
-		}
-
-		// check if is empty
-		if fieldName == "" {
-			return nil, errors.New("Headerkey is empty")
+		if !validHeader(fieldName) {
+			return nil, errors.New("Header is not valid")
 		}
 
 		normalizedFieldName := normalizeHeader(fieldName)
@@ -121,11 +116,21 @@ func uppercaseFirst(s string) string {
 	return string(unicode.ToUpper(r)) + s[size:]
 }
 
-func IsASCII(s string) bool {
-	for i := 0; i < len(s); i++ {
-		if s[i] > unicode.MaxASCII {
+func validHeader(s string) bool {
+	if s == "" {
+		return false
+	}
+	for i := range s {
+		l := s[i]
+
+		isLetter := (l >= 'a' && l <= 'z') || (l >= 'A' && l <= 'Z')
+		isDigit := l >= '0' && l <= '9'
+		isPunctuation := strings.IndexByte("!#$%&'*+-.^_`|~", l) >= 0
+
+		if !isLetter && !isDigit && !isPunctuation {
 			return false
 		}
 	}
+
 	return true
 }
