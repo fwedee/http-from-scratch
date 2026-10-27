@@ -74,11 +74,11 @@ func checkHTTPVersion(version string) (string, error) {
 	case "1.1":
 		return normversion, nil
 	case "1.0":
-		return "", errors.New(protocollversion + " is not supported as HTTP Protocoll version just HTTP/1.1")
+		return "", fmt.Errorf("%w: %s", ErrUnsupportedVersion, version)
 	case "2.0":
-		return "", errors.New(protocollversion + " is not supported as HTTP Protocoll version just HTTP/1.1")
+		return "", fmt.Errorf("%w: %s", ErrUnsupportedVersion, version)
 	default:
-		return "", errors.New(protocollversion + " is not supported as HTTP Protocoll version just HTTP/1.1")
+		return "", fmt.Errorf("%w: %s", ErrUnsupportedVersion, version)
 	}
 }
 

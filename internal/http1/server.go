@@ -2,6 +2,7 @@ package http1
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"log"
 	"net"
@@ -41,14 +42,21 @@ func HandleConnection(conn net.Conn, mux http.Handler) error {
 	request, err := ParseRequest(reader)
 	log.Printf("Received connection on address %s\n", conn.LocalAddr().String())
 
+	response := NewResponse(conn)
 	if err != nil {
-		return fmt.Errorf("Error parsing request: %w", err)
+		response.WriteHeader(http.StatusBadRequest)
+		if errors.Is(err, ErrBadRequest) {
+			response.StatusCode = 400
+		} else if errors.Is(err, ErrUnsupportedVersion) {
+			response.StatusCode = 505
+		} else {
+			response.StatusCode = 500
+		}
+
 	}
 
 	// Create new Response
-	response := NewResponse(conn)
 	log.Printf("Response: %v", response)
-
 	mux.ServeHTTP(response, request)
 	// for later if I don't want to use ServeHTTP anymore and we need to use our own handler
 	// if _ , err := conn.Write([]byte(response)); err != nil {
