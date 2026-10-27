@@ -40,7 +40,7 @@ func ParseRequest(reader *bufio.Reader) (*http.Request, error) {
 	log.Println(url)
 
 	// Parsing httpHeader and getting Content-Length of body
-	httpHeader, contentLength, err := parsingHeader(*reader)
+	httpHeader, contentLength, err := parsingHeader(reader)
 	if err != nil {
 		return nil, fmt.Errorf("Header parsing went wrong: %w", err)
 	}
@@ -97,7 +97,7 @@ func splitAndTrimSlice(inputs []string) []string {
 	return result
 }
 
-func parsingHeader(reader bufio.Reader) (map[string][]string, int64, error) {
+func parsingHeader(reader *bufio.Reader) (map[string][]string, int64, error) {
 	httpHeader := make(map[string][]string)
 	var contentLength int64
 	for {
