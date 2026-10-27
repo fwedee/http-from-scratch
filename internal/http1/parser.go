@@ -13,12 +13,14 @@ import (
 
 func ParseRequest(reader *bufio.Reader) (*http.Request, error) {
 
+	httpHeader := make(map[string][]string)
+
 	rawResponse, err := reader.ReadString('\n')
 	if err != nil {
 		return nil, fmt.Errorf("Error not a string: %w", err)
 	}
 
-	// Split Statusline, Header and Body
+	// Split Statusline, httpHeader and Body
 	statusline := strings.Split(strings.TrimSpace(rawResponse), " ")
 	if len(statusline) < 3 {
 		return nil, errors.New("statusline wrong")
@@ -44,6 +46,12 @@ func ParseRequest(reader *bufio.Reader) (*http.Request, error) {
 			val := strings.TrimSpace(trimmed[len("content-length:"):])
 			contentLength, _ = strconv.ParseInt(val, 10, 64)
 		}
+
+		headerLines := strings.SplitN(trimmed, ":", 2)
+		fieldName := headerLines[0]
+		value := headerLines[0:]
+		httpHeader[fieldName] = value
+
 	}
 
 	var body io.Reader
@@ -51,5 +59,8 @@ func ParseRequest(reader *bufio.Reader) (*http.Request, error) {
 		body = io.LimitReader(reader, int64(contentLength))
 	}
 
-	return http.NewRequest(method, url, body)
+	request, err := http.NewRequest(method, url, body)
+	request.Header = httpHeader
+
+	return request, err
 }
