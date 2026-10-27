@@ -63,7 +63,7 @@ func checkHTTPVersion(version string) (string, error) {
 	normversion := strings.ToUpper(strings.TrimSpace(version))
 	versionSplit := strings.Split(normversion, "/")
 	if len(versionSplit) != 2 {
-		return "", error
+		return "", errors.New("Either the protocoll or the version is missing")
 	}
 	protocol, protocollversion := versionSplit[0], versionSplit[1]
 	if protocol != "HTTP" {
