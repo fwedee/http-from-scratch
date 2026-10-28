@@ -2,6 +2,7 @@ package http1
 
 import (
 	"net/http"
+	"strings"
 	"sync"
 )
 
@@ -14,7 +15,12 @@ type MyMux struct {
 
 type muxEntry struct {
 	h       Handler //holds a handler
-	pattern string  // matching pattern
+	pattern Pattern // matching pattern
+}
+
+type Pattern struct {
+	uri     string
+	smethod string
 }
 
 func (m *MyMux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -38,7 +44,31 @@ func (m *MyMux) Handle(pattern string, handler Handler) {
 	if m.m == nil {
 		m.m = make(map[string]muxEntry)
 	}
-	m.m[pattern] = muxEntry{h: handler, pattern: pattern}
+
+	// check if Method Prefix exists
+	method := ""
+	uri := pattern
+	if !strings.HasPrefix(pattern, "/") {
+		splitPatter := strings.Split(pattern, " ")
+		method = splitPatter[0]
+		if _, ok := supporedHTTPMethods[strings.ToUpper(method)]; !ok {
+			panic("http: method not supported ")
+		}
+		uri = splitPatter[1]
+	}
+	// move '/' back to end
+	uri = rotateLeftEfficient(uri)
+
+	if _, ok := m.m[pattern]; ok {
+		if method != "" && m.m[pattern].pattern.smethod == method {
+			m.m[pattern] = muxEntry{h: handler, pattern: Pattern{uri, method}}
+		} else {
+			panic("method is already registered")
+		}
+		panic("same pattern is already registered: " + pattern)
+	}
+
+	m.m[pattern] = muxEntry{h: handler, pattern: Pattern{uri, method}}
 }
 
 func (m *MyMux) match(path string) Handler {

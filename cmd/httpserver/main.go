@@ -9,12 +9,19 @@ const addr = ":8080"
 
 func main() {
 
-	hdl := http1.DefaultMux
+	mux := http1.DefaultMux
 	// Just some example Handler Funcs
-	hdl.HandleFunc("/hello", handler.Hello)
-	// hdl.HandleFunc("GET /users", handler.GetUsers)
-	// hdl.HandleFunc("POST /users", handler.CreateUser)
-	if err := http1.ListenAndServe(addr, hdl); err != nil {
+	mux.HandleFunc("/hello", handler.Hello)
+	// mux.HandleFunc("/hello", handler.Hello2)
+	mux.HandleFunc("GET /users", handler.GetUsers)
+	mux.HandleFunc("POST /users", handler.CreateUser)
+	// 	mux.HandleFunc("GET /tag/{name}", func(w http.ResponseWriter, r *http.Request) {
+	// 		name := r.PathValue("name")
+	// 		fmt.Fprint(w, "Hello, %s", name)
+	//
+	// 	})
+
+	if err := http1.ListenAndServe(addr, mux); err != nil {
 		panic(err)
 	}
 }

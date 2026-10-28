@@ -46,9 +46,6 @@ func ParseRequest(reader *bufio.Reader) (*http.Request, error) {
 	}
 
 	// Parsing HTTP-Method
-	supporedHTTPMethods := map[string]struct{}{
-		"GET": {}, "POST": {}, "HEAD": {}, "PUT": {}, "DELETE": {}, "TRACE": {}, "CONNECT": {},
-	}
 	if _, ok := supporedHTTPMethods[strings.ToUpper(method)]; !ok {
 		return nil, &ParseError{
 			StatusCode: http.StatusMethodNotAllowed,
@@ -96,12 +93,8 @@ func checkHTTPVersion(version string, validHTTPVersion *regexp.Regexp) (string, 
 			Err:        fmt.Errorf("malformed version %q", version),
 		}
 	}
-	supportedVersion := map[string]struct{}{
-		"HTTP/1.1": {},
-		"HTTP/1.0": {},
-	}
 
-	if _, ok := supportedVersion[version]; !ok {
+	if _, ok := supportedHTTPVersion[version]; !ok {
 		return "", &ParseError{
 			StatusCode: http.StatusHTTPVersionNotSupported,
 			Operation:  "check HTTP version support",
