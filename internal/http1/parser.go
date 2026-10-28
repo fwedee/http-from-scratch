@@ -45,6 +45,18 @@ func ParseRequest(reader *bufio.Reader) (*http.Request, error) {
 		return nil, err
 	}
 
+	// Parsing HTTP-Method
+	supporedHTTPMethods := map[string]struct{}{
+		"GET": {}, "POST": {}, "HEAD": {}, "PUT": {}, "DELETE": {}, "TRACE": {}, "CONNECT": {},
+	}
+	if _, ok := supporedHTTPMethods[strings.ToUpper(method)]; !ok {
+		return nil, &ParseError{
+			StatusCode: http.StatusMethodNotAllowed,
+			Operation:  "check request HTTP method",
+			Err:        fmt.Errorf("unsupported method %q", method),
+		}
+	}
+
 	// Debuggin Purpose
 	log.Println(method)
 	log.Println(httpVersion)
