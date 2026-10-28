@@ -70,11 +70,13 @@ func ParseRequest(reader *bufio.Reader) (*http.Request, error) {
 		request.Body = http.NoBody
 	}
 	request.Header = httpHeader
+	request.Proto = httpVersion
 
 	return request, err
 }
 
 func checkHTTPVersion(version string, validHTTPVersion *regexp.Regexp) (string, error) {
+
 	if !validHTTPVersion.MatchString(version) {
 		return "", &ParseError{
 			StatusCode: http.StatusBadRequest,
@@ -82,8 +84,12 @@ func checkHTTPVersion(version string, validHTTPVersion *regexp.Regexp) (string, 
 			Err:        fmt.Errorf("malformed version %q", version),
 		}
 	}
+	supportedVersion := map[string]struct{}{
+		"HTTP/1.1": {},
+		"HTTP/1.0": {},
+	}
 
-	if version != "HTTP/1.1" {
+	if _, ok := supportedVersion[version]; !ok {
 		return "", &ParseError{
 			StatusCode: http.StatusHTTPVersionNotSupported,
 			Operation:  "check HTTP version support",

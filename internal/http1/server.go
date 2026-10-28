@@ -83,7 +83,16 @@ func HandleConnection(conn net.Conn, mux http.Handler) error {
 
 		}
 
-		closeConnection := hasHeaderToken(request.Header.Values("Connection"), "close") || hasHeaderToken(response.Header().Values("Connection"), "close")
+		response.HTTPVersion = request.Proto
+
+		var closeConnection bool
+
+		if hasHeaderToken(request.Header.Values("Connection"), "close") || hasHeaderToken(response.Header().Values("Connection"), "close") {
+			closeConnection = true
+		}
+		if response.HTTPVersion == "HTTP/1.0" && !hasHeaderToken(request.Header.Values("Connection"), "keep-alive") {
+			closeConnection = true
+		}
 
 		if closeConnection {
 			response.Header().Set("Connection", "close")

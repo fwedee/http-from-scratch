@@ -46,7 +46,7 @@ func (r *Response) WriteHeader(statusCode int) {
 func (r *Response) Send() error {
 
 	statusText := http.StatusText(r.StatusCode)
-	_, err := fmt.Fprintf(r.connection, "HTTP/1.1 %d %s\r\n", r.StatusCode, statusText)
+	_, err := fmt.Fprintf(r.connection, "%s %d %s\r\n", r.HTTPVersion, r.StatusCode, statusText)
 	if err != nil {
 		return err
 	}
