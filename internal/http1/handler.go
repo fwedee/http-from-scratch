@@ -1,6 +1,7 @@
 package http1
 
 import (
+	"errors"
 	"net/http"
 	"strings"
 	"sync"
@@ -10,22 +11,18 @@ var DefaultMux = NewServeMux()
 
 type MyMux struct {
 	mu sync.RWMutex
-	m  map[string]muxEntry //holds a map of URL patterns
+	m  map[string]map[string]muxEntry //holds a map of URL patterns
 }
 
 type muxEntry struct {
 	h       Handler //holds a handler
-	pattern Pattern // matching pattern
-}
-
-type Pattern struct {
-	uri     string
-	smethod string
+	pattern string
 }
 
 func (m *MyMux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	h := m.match(r.URL.Path)
-	if h == nil {
+	h, err := m.match(r.URL.Path, r.Method)
+
+	if err != nil {
 		http.NotFound(w, r)
 		return
 	}
@@ -42,7 +39,7 @@ func (m *MyMux) Handle(pattern string, handler Handler) {
 		panic("http: nil handler")
 	}
 	if m.m == nil {
-		m.m = make(map[string]muxEntry)
+		m.m = make(map[string]map[string]muxEntry)
 	}
 
 	// check if Method Prefix exists
@@ -57,27 +54,42 @@ func (m *MyMux) Handle(pattern string, handler Handler) {
 		uri = splitPatter[1]
 	}
 	// move '/' back to end
-	uri = rotateLeftEfficient(uri)
+	// uri = rotateLeftEfficient(uri)
 
-	if _, ok := m.m[pattern]; ok {
-		if method != "" && m.m[pattern].pattern.smethod == method {
-			m.m[pattern] = muxEntry{h: handler, pattern: Pattern{uri, method}}
+	if _, ok := m.m[uri]; ok {
+		if method != "" {
+			if _, exists := m.m[uri][method]; !exists {
+				m.m[uri][method] = muxEntry{h: handler, pattern: pattern}
+			} else {
+				panic("same pattern is already registered: " + pattern)
+			}
 		} else {
 			panic("method is already registered")
 		}
-		panic("same pattern is already registered: " + pattern)
 	}
-
-	m.m[pattern] = muxEntry{h: handler, pattern: Pattern{uri, method}}
+	if _, exists := m.m[uri][method]; !exists {
+		new_map := map[string]muxEntry{
+			method: {h: handler, pattern: pattern}}
+		m.m[uri] = new_map
+	}
+	m.m[uri][method] = muxEntry{h: handler, pattern: pattern}
 }
 
-func (m *MyMux) match(path string) Handler {
+func (m *MyMux) match(path string, method string) (Handler, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 	if entry, ok := m.m[path]; ok {
-		return entry.h
+
+		if _, exists := entry[method]; exists {
+			return entry[method].h, nil
+		}
+
+		if _, exists := entry[""]; exists {
+			return entry[""].h, nil
+		}
+		return nil, errors.New("This method is not permitted")
 	}
-	return nil
+	return nil, errors.New("This route is not here")
 }
 
 type HandlerFunc func(http.ResponseWriter, *http.Request)
@@ -95,7 +107,7 @@ func (f HandlerFunc) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func NewServeMux() *MyMux {
-	return &MyMux{m: make(map[string]muxEntry)}
+	return &MyMux{m: make(map[string]map[string]muxEntry)}
 }
 
 func HandleFunc(pattern string, handler func(http.ResponseWriter, *http.Request)) {
