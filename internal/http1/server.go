@@ -42,7 +42,6 @@ func HandleConnection(conn net.Conn, mux http.Handler) error {
 		log.Printf("Received connection on address %s\n", conn.LocalAddr().String())
 
 		request, err := ParseRequest(reader)
-		response := NewResponse(conn)
 		if err != nil {
 
 			if errors.Is(err, io.EOF) {
@@ -50,37 +49,38 @@ func HandleConnection(conn net.Conn, mux http.Handler) error {
 			}
 
 			if parseErr, ok := errors.AsType[*ParseError](err); ok {
+				response := NewResponse(conn)
+				response.Header().Set("Connection", "close")
 				response.WriteHeader(parseErr.StatusCode)
-				if sendErr := response.Send(); sendErr != nil {
-					return fmt.Errorf("send HTTP error response: %w", sendErr)
-				}
-				return nil
+				return response.Send()
 			}
 			return fmt.Errorf("read request error: %w", err)
 		}
 
 		// Create new Response
+		response := NewResponse(conn)
+		response.requestMethod = request.Method
 		log.Printf("Response: %v", response)
 		mux.ServeHTTP(response, request)
-		err = response.Send()
-		if err != nil {
-			return err
-		}
-		_, readErr := io.Copy(io.Discard, request.Body)
-		closeErr := request.Body.Close()
 
-		if readErr != nil {
-			if errors.Is(readErr, io.ErrUnexpectedEOF) {
-				response = NewResponse(conn)
-				response.Header().Set("Connection", "close")
-				response.WriteHeader(http.StatusBadRequest)
-				return response.Send()
+		// Finish reading this request before sending final response
+		if request.Body != nil {
+			_, readErr := io.Copy(io.Discard, request.Body)
+			closeErr := request.Body.Close()
+
+			if readErr != nil {
+				if errors.Is(readErr, io.ErrUnexpectedEOF) {
+					response = NewResponse(conn)
+					response.Header().Set("Connection", "close")
+					response.WriteHeader(http.StatusBadRequest)
+					return response.Send()
+				}
+				return fmt.Errorf("read request body: %w", readErr)
 			}
-			return readErr
-		}
+			if closeErr != nil {
+				return fmt.Errorf("read request body: %w", closeErr)
+			}
 
-		if closeErr != nil {
-			return closeErr
 		}
 
 		closeConnection := hasHeaderToken(request.Header.Values("Connection"), "close") || hasHeaderToken(response.Header().Values("Connection"), "close")
@@ -88,17 +88,12 @@ func HandleConnection(conn net.Conn, mux http.Handler) error {
 		if closeConnection {
 			response.Header().Set("Connection", "close")
 		}
-		if err = response.Send(); err != nil {
-			return err
+		if err := response.Send(); err != nil {
+			return fmt.Errorf("send response: %w", err)
 		}
 		if closeConnection {
 			return nil
 		}
-		// for later if I don't want to use ServeHTTP anymore and we need to use our own handler
-		// if _ , err := conn.Write([]byte(response)); err != nil {
-		// 	return fmt.Errorf("Error writing data: %v", err)
-		// }
-		//
 	}
 }
 

@@ -3,6 +3,7 @@ package http1
 import (
 	"errors"
 	"fmt"
+	"net/http"
 )
 
 type ParseError struct {
@@ -20,6 +21,14 @@ func (e *ParseError) Error() string {
 
 func (e *ParseError) Unwrap() error {
 	return e.Err
+}
+
+func badRequest(operation string, err error) *ParseError {
+	return &ParseError{
+		StatusCode: http.StatusBadRequest,
+		Operation:  operation,
+		Err:        err,
+	}
 }
 
 var ErrBadRequest = errors.New("bad request")

@@ -18,6 +18,16 @@ func ParseRequest(reader *bufio.Reader) (*http.Request, error) {
 
 	rawResponse, err := reader.ReadString('\n')
 	if err != nil {
+		if errors.Is(err, io.EOF) {
+			if rawResponse == "" {
+				return nil, io.EOF
+			}
+			return nil, &ParseError{
+				StatusCode: http.StatusBadRequest,
+				Operation:  "read request line",
+				Err:        io.ErrUnexpectedEOF,
+			}
+		}
 		return nil, fmt.Errorf("Error not a string: %w", err)
 	}
 
@@ -55,6 +65,9 @@ func ParseRequest(reader *bufio.Reader) (*http.Request, error) {
 	request, err := http.NewRequest(method, url, body)
 	if err != nil {
 		return nil, err
+	}
+	if request.Body == nil {
+		request.Body = http.NoBody
 	}
 	request.Header = httpHeader
 
@@ -101,7 +114,14 @@ func parsingHeader(reader *bufio.Reader) (map[string][]string, int64, error) {
 	for {
 		headerLine, err := reader.ReadString('\n')
 		if err != nil {
-			return nil, 0, err
+			if errors.Is(err, io.EOF) {
+				return nil, 0, &ParseError{
+					StatusCode: http.StatusBadRequest,
+					Operation:  "read request header",
+					Err:        io.ErrUnexpectedEOF,
+				}
+			}
+			return nil, 0, fmt.Errorf("read request header: %w", err)
 		}
 		trimmed := strings.TrimRight(headerLine, "\r\n")
 		if trimmed == "" {
