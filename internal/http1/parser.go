@@ -70,7 +70,7 @@ func ParseRequest(reader *bufio.Reader) (*http.Request, error) {
 		request.Body = http.NoBody
 	}
 	request.Header = httpHeader
-	request.Proto = httpVersion
+	request.Proto = validVersion
 
 	return request, err
 }

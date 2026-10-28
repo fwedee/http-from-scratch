@@ -51,6 +51,7 @@ func HandleConnection(conn net.Conn, mux http.Handler) error {
 			if parseErr, ok := errors.AsType[*ParseError](err); ok {
 				response := NewResponse(conn)
 				response.Header().Set("Connection", "close")
+				response.HTTPVersion = "HTTP/1.1"
 				response.WriteHeader(parseErr.StatusCode)
 				return response.Send()
 			}
@@ -72,6 +73,7 @@ func HandleConnection(conn net.Conn, mux http.Handler) error {
 				if errors.Is(readErr, io.ErrUnexpectedEOF) {
 					response = NewResponse(conn)
 					response.Header().Set("Connection", "close")
+					response.HTTPVersion = "HTTP/1.1"
 					response.WriteHeader(http.StatusBadRequest)
 					return response.Send()
 				}
