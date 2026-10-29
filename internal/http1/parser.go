@@ -39,7 +39,7 @@ func ParseRequest(reader *bufio.Reader) (*http.Request, error) {
 		}
 	}
 	// Split Statusline
-	statusline := strings.Split(strings.TrimSpace(rawResponse), " ")
+	statusline := strings.Split(strings.TrimSuffix(rawResponse, "\r\n"), " ")
 	if len(statusline) < 3 {
 		return nil, &ParseError{
 			StatusCode: 400,
