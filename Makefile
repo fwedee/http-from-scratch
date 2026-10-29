@@ -1,32 +1,37 @@
+# GO Vars
 BINARY := httpserver
 MAIN_PACKAGE := ./cmd/httpserver
-
 .DEFAULT_GOAL := build
+
+# Deployment Vars
+APP := my-http-server
+TAG := $(shell date -u +%Y%m%d%H%M%S)
+IMAGE := $(APP):$(TAG)
+
+.PHONY: deploy fmt vet build run test clean fix
+
+deploy:
+	docker build -t $(IMAGE) .
+	sed 's|__IMAGE__|$(IMAGE)|g' k8s/deployment.yaml | kubectl --context docker-desktop apply -f k8s/service.yaml -f -
+	kubectl --context docker-desktop -n demo rollout status deployment/$(APP)
 
 fmt:
 	go fmt ./...
-.PHONY: fmt
 
 vet: fmt
 	go vet ./...
-.PHONY: vet
 
 build: vet
 	go build -o bin/$(BINARY) $(MAIN_PACKAGE)
-.PHONY: build
 
 run:
 	go run $(MAIN_PACKAGE)
-.PHONY: run
 
 test:
 	go test ./...
-.PHONY: test
 
 clean:
-	rm -f $(BINARY)
-.PHONY: clean
+	rm -f bin/$(BINARY)
 
 fix:
 	go fix ./...
-.PHONY: fix
