@@ -8,6 +8,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"net/http/httputil"
 	"regexp"
 	"strconv"
 	"strings"
@@ -98,7 +99,19 @@ func ParseRequest(reader *bufio.Reader) (*http.Request, error) {
 	}
 
 	var body io.Reader
-	if contentLength > 0 {
+	header := http.Header(httpHeader)
+
+	if hasHeaderToken(header.Values("Transfer-Encoding"), "chunked") {
+		data, err := readChunkedBody(reader)
+		if err != nil {
+			return nil, &ParseError{
+				StatusCode: 400,
+				Operation:  "read chunked body",
+				Err:        err,
+			}
+		}
+		body = bytes.NewReader(data)
+	} else if contentLength > 0 {
 		buf := make([]byte, int(contentLength))
 		_, err := io.ReadFull(reader, buf)
 		if err != nil {
@@ -280,4 +293,20 @@ func validFieldValue(s string) bool {
 		}
 	}
 	return true
+}
+
+func readChunkedBody(reader *bufio.Reader) ([]byte, error) {
+	const maxBodyBytes = 1024 * 1024 //1 MiB
+
+	decoded := httputil.NewChunkedReader(reader)
+	body, err := io.ReadAll(io.LimitReader(decoded, maxBodyBytes+1))
+	if err != nil {
+		return nil, fmt.Errorf("chunked body too large")
+	}
+
+	_, _, err = parsingHeader(reader)
+	if err != nil {
+		return nil, err
+	}
+	return body, nil
 }

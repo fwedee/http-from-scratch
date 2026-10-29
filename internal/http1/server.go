@@ -8,7 +8,6 @@ import (
 	"log"
 	"net"
 	"net/http"
-	"strings"
 )
 
 func ListenAndServe(addr string, handler http.Handler) error {
@@ -106,15 +105,4 @@ func HandleConnection(conn net.Conn, mux http.Handler) error {
 			return nil
 		}
 	}
-}
-
-func hasHeaderToken(values []string, token string) bool {
-	for _, value := range values {
-		for _, part := range strings.Split(value, ",") {
-			if strings.EqualFold(strings.TrimSpace(part), token) {
-				return true
-			}
-		}
-	}
-	return false
 }
