@@ -3,11 +3,13 @@ kind: Service
 metadata:
   name: my-http-server
   namespace: demo
+  labels:
+    app: my-http-server
 spec:
   type: ClusterIP
   selector:
     app: my-http-server
   ports:
-    - name: http
+    - name: metrics
       port: 8080
-      targetPort: http
+      targetPort: 8080

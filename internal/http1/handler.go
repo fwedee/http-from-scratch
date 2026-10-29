@@ -93,8 +93,8 @@ func (m *MyMux) match(path string, method string) (Handler, error) {
 
 	// Todo: Check if the entry is a dynamic route
 	// test/{1}/{2}
-	// 
-	
+	//
+
 	return nil, errors.New("This route is not here")
 }
 

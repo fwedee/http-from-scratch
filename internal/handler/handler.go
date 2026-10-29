@@ -4,12 +4,19 @@ import (
 	"encoding/json"
 	"fmt"
 	"httpServer/internal/database"
+	"httpServer/internal/telemetry"
 	"io"
 	"net/http"
 	"strings"
+
+	"github.com/VictoriaMetrics/metrics"
 )
 
 var repository = database.NewRepository()
+
+func Telemetry(w http.ResponseWriter, r *http.Request) {
+	metrics.WritePrometheus(w, true)
+}
 
 func GetUsers(w http.ResponseWriter, r *http.Request) {
 	users := repository.GetUsers()
@@ -35,6 +42,7 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func Hello(w http.ResponseWriter, r *http.Request) {
+	telemetry.RequestCounter.Inc()
 	fmt.Fprintf(w, "hello")
 }
 

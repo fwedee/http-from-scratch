@@ -14,6 +14,7 @@ func main() {
 	mux.HandleFunc("/hello", handler.Hello)
 	mux.HandleFunc("GET /users", handler.GetUsers)
 	mux.HandleFunc("POST /users", handler.CreateUser)
+	mux.HandleFunc("/metrics", handler.Telemetry)
 	// 	mux.HandleFunc("GET /tag/{name}", func(w http.ResponseWriter, r *http.Request) {
 	// 		name := r.PathValue("name")
 	// 		fmt.Fprint(w, "Hello, %s", name)

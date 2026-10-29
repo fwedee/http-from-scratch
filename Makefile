@@ -22,10 +22,10 @@ vet: fmt
 	go vet ./...
 
 build: vet
-	go build -o bin/$(BINARY) $(MAIN_PACKAGE)
+	CGO_ENABLED=0 go build -o bin/$(BINARY) $(MAIN_PACKAGE)
 
 run:
-	go run $(MAIN_PACKAGE)
+	CGO_ENABLED=0 go run $(MAIN_PACKAGE)
 
 test:
 	go test ./...
