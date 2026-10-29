@@ -170,11 +170,22 @@ func parsingHeader(reader *bufio.Reader) (map[string][]string, int64, error) {
 
 		// check if the header includes only validToken
 		if !validToken(fieldName) {
-			return nil, 0, errors.New("Header is not valid")
+			return nil, 0, &ParseError{
+				StatusCode: 400,
+				Operation:  "check header for invalidTokens",
+				Err:        fmt.Errorf("Header is not valid: %s", fieldName),
+			}
 		}
 
 		normalizedFieldName := normalizeHeader(fieldName)
 
+		if !validFieldValue(headerLines[1]) {
+			return nil, 0, &ParseError{
+				StatusCode: 400,
+				Operation:  "check if fieldname is valid",
+				Err:        fmt.Errorf("Fieldvalue is not valid %s", headerLines[1]),
+			}
+		}
 		value := strings.TrimSpace(headerLines[1])
 
 		httpHeader[normalizedFieldName] = append(httpHeader[normalizedFieldName], value)
@@ -216,5 +227,14 @@ func validToken(s string) bool {
 		}
 	}
 
+	return true
+}
+
+func validFieldValue(s string) bool {
+	for _, r := range s {
+		if r < 0x20 && r != '\t' || r == 0x7f {
+			return false
+		}
+	}
 	return true
 }
