@@ -38,6 +38,13 @@ func ParseRequest(reader *bufio.Reader) (*http.Request, error) {
 	}
 	method, url, httpVersion := statusline[0], statusline[1], statusline[2]
 
+	if !validToken(method) {
+		return nil, &ParseError{
+			StatusCode: 400,
+			Operation:  "check statusline for invalidCharacters",
+			Err:        fmt.Errorf("unssupported character %s", method),
+		}
+	}
 	// Parsing HTTPVersion
 	var validHTTPVersion = regexp.MustCompile(`^HTTP/[0-9]\.[0-9]$`)
 	validVersion, err := checkHTTPVersion(httpVersion, validHTTPVersion)
@@ -150,8 +157,8 @@ func parsingHeader(reader *bufio.Reader) (map[string][]string, int64, error) {
 
 		fieldName := headerLines[0]
 
-		// check if is ascii
-		if !validHeader(fieldName) {
+		// check if the header includes only validToken
+		if !validToken(fieldName) {
 			return nil, 0, errors.New("Header is not valid")
 		}
 
@@ -182,7 +189,7 @@ func uppercaseFirst(s string) string {
 	return string(unicode.ToUpper(r)) + s[size:]
 }
 
-func validHeader(s string) bool {
+func validToken(s string) bool {
 	if s == "" {
 		return false
 	}
