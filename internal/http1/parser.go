@@ -17,13 +17,6 @@ import (
 func ParseRequest(reader *bufio.Reader) (*http.Request, error) {
 
 	rawResponse, err := reader.ReadString('\n')
-	if !strings.HasSuffix(rawResponse, "\r\n") {
-		return nil, &ParseError{
-			StatusCode: 400,
-			Operation:  "check suffix",
-			Err:        fmt.Errorf("suffix is wrong and not rn: %s", rawResponse),
-		}
-	}
 	if err != nil {
 		if errors.Is(err, io.EOF) {
 			if rawResponse == "" {
@@ -38,6 +31,13 @@ func ParseRequest(reader *bufio.Reader) (*http.Request, error) {
 		return nil, fmt.Errorf("Error not a string: %w", err)
 	}
 
+	if !strings.HasSuffix(rawResponse, "\r\n") {
+		return nil, &ParseError{
+			StatusCode: 400,
+			Operation:  "check suffix",
+			Err:        fmt.Errorf("suffix is wrong and not rn: %s", rawResponse),
+		}
+	}
 	// Split Statusline
 	statusline := strings.Split(strings.TrimSpace(rawResponse), " ")
 	if len(statusline) < 3 {
