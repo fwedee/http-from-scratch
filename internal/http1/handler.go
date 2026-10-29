@@ -12,6 +12,7 @@ var DefaultMux = NewServeMux()
 type MyMux struct {
 	mu sync.RWMutex
 	m  map[string]map[string]muxEntry //holds a map of URL patterns
+	dm map[string]map[string]muxEntry // holds the dynamics maps
 }
 
 type muxEntry struct {
@@ -89,6 +90,11 @@ func (m *MyMux) match(path string, method string) (Handler, error) {
 		}
 		return nil, errors.New("This method is not permitted")
 	}
+
+	// Todo: Check if the entry is a dynamic route
+	// test/{1}/{2}
+	// 
+	
 	return nil, errors.New("This route is not here")
 }
 
