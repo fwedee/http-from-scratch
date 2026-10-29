@@ -173,9 +173,10 @@ func splitAndTrimSlice(inputs []string) []string {
 	return result
 }
 
-func parsingHeader(reader *bufio.Reader) (map[string][]string, int64, error) {
+func parsingHeader(reader *bufio.Reader) (map[string][]string, int, error) {
 	httpHeader := make(map[string][]string)
-	var contentLength int64
+	var contentLength int
+	var seenContentLength bool
 	var headAmount int
 	for {
 		headerLine, err := reader.ReadString('\n')
@@ -214,7 +215,19 @@ func parsingHeader(reader *bufio.Reader) (map[string][]string, int64, error) {
 
 		if strings.HasPrefix(strings.ToLower(trimmed), "content-length:") {
 			val := strings.TrimSpace(trimmed[len("content-length:"):])
-			contentLength, _ = strconv.ParseInt(val, 10, 64)
+			parsed, err := strconv.ParseUint(val, 10, strconv.IntSize-1)
+			length := int(parsed)
+
+			if err != nil || (seenContentLength && parsed != uint64(length)) {
+				return nil, 0, &ParseError{
+					StatusCode: 400,
+					Operation:  "validate Content-Length",
+					Err:        fmt.Errorf("invalide or conflicting content-length: %q", val),
+				}
+
+			}
+			contentLength = length
+			seenContentLength = true
 		}
 
 		headerLines := strings.SplitN(trimmed, ":", 2)
@@ -308,5 +321,10 @@ func readChunkedBody(reader *bufio.Reader) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	if len(body) > maxBodyBytes {
+		return nil, fmt.Errorf("chunked body too large")
+	}
+
 	return body, nil
 }
