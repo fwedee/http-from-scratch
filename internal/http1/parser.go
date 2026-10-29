@@ -2,6 +2,7 @@ package http1
 
 import (
 	"bufio"
+	"bytes"
 	"errors"
 	"fmt"
 	"io"
@@ -13,6 +14,10 @@ import (
 	"unicode"
 	"unicode/utf8"
 )
+
+const maxRequestLineBytes = 8 * 2056
+const maxHeaderLineBytes = 8 * 2056
+const maxHeaderAmount = 100
 
 func ParseRequest(reader *bufio.Reader) (*http.Request, error) {
 
@@ -36,6 +41,14 @@ func ParseRequest(reader *bufio.Reader) (*http.Request, error) {
 			StatusCode: 400,
 			Operation:  "check suffix",
 			Err:        fmt.Errorf("suffix is wrong and not rn: %s", rawResponse),
+		}
+	}
+	// TODO: should check before buffering
+	if len(rawResponse) > maxRequestLineBytes {
+		return nil, &ParseError{
+			StatusCode: 400,
+			Operation:  "check request size",
+			Err:        fmt.Errorf("the request size is too large %d", len(rawResponse)),
 		}
 	}
 	// Split Statusline
@@ -86,7 +99,17 @@ func ParseRequest(reader *bufio.Reader) (*http.Request, error) {
 
 	var body io.Reader
 	if contentLength > 0 {
-		body = io.LimitReader(reader, int64(contentLength))
+		buf := make([]byte, int(contentLength))
+		_, err := io.ReadFull(reader, buf)
+		if err != nil {
+			return nil, &ParseError{
+				StatusCode: 400,
+				Operation:  "checking body lenght of request",
+				Err:        fmt.Errorf("the request body size and header don't match"),
+			}
+		}
+
+		body = bytes.NewReader(buf)
 	}
 
 	request, err := http.NewRequest(method, url, body)
@@ -140,6 +163,7 @@ func splitAndTrimSlice(inputs []string) []string {
 func parsingHeader(reader *bufio.Reader) (map[string][]string, int64, error) {
 	httpHeader := make(map[string][]string)
 	var contentLength int64
+	var headAmount int
 	for {
 		headerLine, err := reader.ReadString('\n')
 		if err != nil {
@@ -152,10 +176,29 @@ func parsingHeader(reader *bufio.Reader) (map[string][]string, int64, error) {
 			}
 			return nil, 0, fmt.Errorf("read request header: %w", err)
 		}
-		trimmed := strings.TrimRight(headerLine, "\r\n")
+
+		if (len(headerLine)) >= maxHeaderLineBytes {
+			return nil, 0, &ParseError{
+				StatusCode: 431,
+				Operation:  "check header length",
+				Err:        fmt.Errorf("The header is too long %d", len(headerLine)),
+			}
+		}
+
+		trimmed := strings.TrimSuffix(headerLine, "\r\n")
 		if trimmed == "" {
 			break
 		}
+
+		headAmount += 1
+		if headAmount > maxHeaderAmount {
+			return nil, 0, &ParseError{
+				StatusCode: 431,
+				Operation:  "check header amount",
+				Err:        fmt.Errorf("Too many header in request %d", headAmount),
+			}
+		}
+
 		if strings.HasPrefix(strings.ToLower(trimmed), "content-length:") {
 			val := strings.TrimSpace(trimmed[len("content-length:"):])
 			contentLength, _ = strconv.ParseInt(val, 10, 64)
@@ -182,7 +225,7 @@ func parsingHeader(reader *bufio.Reader) (map[string][]string, int64, error) {
 		if !validFieldValue(headerLines[1]) {
 			return nil, 0, &ParseError{
 				StatusCode: 400,
-				Operation:  "check if fieldname is valid",
+				Operation:  "check if fieldvalue is valid",
 				Err:        fmt.Errorf("Fieldvalue is not valid %s", headerLines[1]),
 			}
 		}
