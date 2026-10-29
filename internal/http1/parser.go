@@ -218,7 +218,7 @@ func parsingHeader(reader *bufio.Reader) (map[string][]string, int, error) {
 			parsed, err := strconv.ParseUint(val, 10, strconv.IntSize-1)
 			length := int(parsed)
 
-			if err != nil || (seenContentLength && parsed != uint64(length)) {
+			if err != nil || (seenContentLength && length != contentLength) {
 				return nil, 0, &ParseError{
 					StatusCode: 400,
 					Operation:  "validate Content-Length",
