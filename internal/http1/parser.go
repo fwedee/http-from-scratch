@@ -34,7 +34,11 @@ func ParseRequest(reader *bufio.Reader) (*http.Request, error) {
 	// Split Statusline
 	statusline := strings.Split(strings.TrimSpace(rawResponse), " ")
 	if len(statusline) < 3 {
-		return nil, errors.New("statusline wrong")
+		return nil, &ParseError{
+			StatusCode: 400,
+			Operation:  "check statusline length",
+			Err:        fmt.Errorf("statusline wrong %v", statusline),
+		}
 	}
 	method, url, httpVersion := statusline[0], statusline[1], statusline[2]
 
