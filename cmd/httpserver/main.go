@@ -1,16 +1,24 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"httpServer/internal/handler"
 	"httpServer/internal/http1"
 	"httpServer/internal/telemetry"
 	"log"
+	"os"
 )
 
-const addr = ":8080"
-
 func main() {
+
+	// Initalizing environment varaibles
+	getEnvFile()
+	addr, there := os.LookupEnv("ADDRESS")
+	if !there {
+		log.Fatal("Address was not set in environment variable")
+		os.Exit(1)
+	}
 
 	// for debugging purposes
 	// 	f, err := os.Create("trace.out")
@@ -48,5 +56,26 @@ func main() {
 
 	if err := http1.ListenAndServe(addr, wrappedMux); err != nil {
 		panic(err)
+	}
+}
+
+func getEnvFile() {
+	content, err := os.ReadFile(".env")
+	if err != nil {
+		log.Print(".env file is not in current directory")
+		return
+	}
+	lines := bytes.Split(content, []byte("\n"))
+
+	for _, line := range lines {
+		key, val, found := bytes.Cut(line, []byte("="))
+		if !found {
+			continue
+		}
+		// fmt.Printf("key: %s, value: %s\n", key, val)
+		err := os.Setenv(string(key), string(val))
+		if err != nil {
+			panic("env key & values are wrong")
+		}
 	}
 }

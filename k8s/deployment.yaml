@@ -20,3 +20,6 @@ spec:
           ports:
             - name: http
               containerPort: 8080
+          env:
+            - name: ADDRESS
+              value: ":8080"
