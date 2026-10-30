@@ -1,0 +1,28 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ingress-monitoring
+  namespace: monitoring
+spec:
+  ingressClassName: traefik
+  rules:
+  - host: vm.127.0.0.1.nip.io
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: vmsingle-vmstack-victoria-metrics-k8s-stack
+            port:
+              number: 8428
+  - host: traces.127.0.0.1.nip.io
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: vts-vt-single-server
+            port:
+              number: 10428
