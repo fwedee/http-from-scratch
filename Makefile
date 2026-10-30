@@ -10,6 +10,15 @@ IMAGE := $(APP):$(TAG)
 
 .PHONY: deploy fmt vet build run test clean fix
 
+create: setup deploy
+
+setup:
+	kubectl --context docker-desktop apply -f k8s/namespaces.yaml
+	helm install traefik traefik/traefik --namespace traefik --create-namespace
+	helm install vmstack vm/victoria-metrics-k8s-stack --namespace monitoring --create-namespace
+	helm upgrade --install vts vm/victoria-traces-single --namespace monitoring --kube-context docker-desktop
+	kubectl --context docker-desktop apply -f k8s/ingress.yaml -f k8s/ingress2.yaml
+
 deploy:
 	docker build -t $(IMAGE) .
 	sed 's|__IMAGE__|$(IMAGE)|g' k8s/deployment.yaml | kubectl --context docker-desktop apply -f k8s/service.yaml -f -
