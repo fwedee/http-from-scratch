@@ -29,7 +29,7 @@ func ParseRequest(reader *bufio.Reader) (*http.Request, error) {
 				return nil, io.EOF
 			}
 			return nil, &ParseError{
-				StatusCode: http.StatusBadRequest,
+				StatusCode: StatusBadRequest,
 				Operation:  "read request line",
 				Err:        io.ErrUnexpectedEOF,
 			}
@@ -80,7 +80,7 @@ func ParseRequest(reader *bufio.Reader) (*http.Request, error) {
 	// Parsing HTTP-Method
 	if _, ok := supporedHTTPMethods[strings.ToUpper(method)]; !ok {
 		return nil, &ParseError{
-			StatusCode: http.StatusMethodNotAllowed,
+			StatusCode: StatusMethodNotAllowed,
 			Operation:  "check request HTTP method",
 			Err:        fmt.Errorf("unsupported method %q", method),
 		}
@@ -105,7 +105,7 @@ func ParseRequest(reader *bufio.Reader) (*http.Request, error) {
 		data, err := readChunkedBody(reader)
 		if err != nil {
 			return nil, &ParseError{
-				StatusCode: 400,
+				StatusCode: StatusBadRequest,
 				Operation:  "read chunked body",
 				Err:        err,
 			}
@@ -116,7 +116,7 @@ func ParseRequest(reader *bufio.Reader) (*http.Request, error) {
 		_, err := io.ReadFull(reader, buf)
 		if err != nil {
 			return nil, &ParseError{
-				StatusCode: 400,
+				StatusCode: StatusBadRequest,
 				Operation:  "checking body lenght of request",
 				Err:        fmt.Errorf("the request body size and header don't match"),
 			}
@@ -142,7 +142,7 @@ func checkHTTPVersion(version string, validHTTPVersion *regexp.Regexp) (string, 
 
 	if !validHTTPVersion.MatchString(version) {
 		return "", &ParseError{
-			StatusCode: http.StatusBadRequest,
+			StatusCode: StatusBadRequest,
 			Operation:  "parse HTTP version",
 			Err:        fmt.Errorf("malformed version %q", version),
 		}
@@ -150,7 +150,7 @@ func checkHTTPVersion(version string, validHTTPVersion *regexp.Regexp) (string, 
 
 	if _, ok := supportedHTTPVersion[version]; !ok {
 		return "", &ParseError{
-			StatusCode: http.StatusHTTPVersionNotSupported,
+			StatusCode: StatusHTTPVersionNotSupported,
 			Operation:  "check HTTP version support",
 			Err:        fmt.Errorf("unsupported version %q", version),
 		}
@@ -183,7 +183,7 @@ func parsingHeader(reader *bufio.Reader) (map[string][]string, int, error) {
 		if err != nil {
 			if errors.Is(err, io.EOF) {
 				return nil, 0, &ParseError{
-					StatusCode: http.StatusBadRequest,
+					StatusCode: StatusBadRequest,
 					Operation:  "read request header",
 					Err:        io.ErrUnexpectedEOF,
 				}
@@ -193,7 +193,7 @@ func parsingHeader(reader *bufio.Reader) (map[string][]string, int, error) {
 
 		if (len(headerLine)) >= maxHeaderLineBytes {
 			return nil, 0, &ParseError{
-				StatusCode: 431,
+				StatusCode: StatusRequestHeaderTooLarge,
 				Operation:  "check header length",
 				Err:        fmt.Errorf("The header is too long %d", len(headerLine)),
 			}
@@ -207,7 +207,7 @@ func parsingHeader(reader *bufio.Reader) (map[string][]string, int, error) {
 		headAmount += 1
 		if headAmount > maxHeaderAmount {
 			return nil, 0, &ParseError{
-				StatusCode: 431,
+				StatusCode: StatusRequestHeaderTooLarge,
 				Operation:  "check header amount",
 				Err:        fmt.Errorf("Too many header in request %d", headAmount),
 			}
@@ -220,7 +220,7 @@ func parsingHeader(reader *bufio.Reader) (map[string][]string, int, error) {
 
 			if err != nil || (seenContentLength && length != contentLength) {
 				return nil, 0, &ParseError{
-					StatusCode: 400,
+					StatusCode: StatusBadRequest,
 					Operation:  "validate Content-Length",
 					Err:        fmt.Errorf("invalide or conflicting content-length: %q", val),
 				}
@@ -240,7 +240,7 @@ func parsingHeader(reader *bufio.Reader) (map[string][]string, int, error) {
 		// check if the header includes only validToken
 		if !validToken(fieldName) {
 			return nil, 0, &ParseError{
-				StatusCode: 400,
+				StatusCode: StatusBadRequest,
 				Operation:  "check header for invalidTokens",
 				Err:        fmt.Errorf("Header is not valid: %s", fieldName),
 			}
@@ -250,7 +250,7 @@ func parsingHeader(reader *bufio.Reader) (map[string][]string, int, error) {
 
 		if !validFieldValue(headerLines[1]) {
 			return nil, 0, &ParseError{
-				StatusCode: 400,
+				StatusCode: StatusBadRequest,
 				Operation:  "check if fieldvalue is valid",
 				Err:        fmt.Errorf("Fieldvalue is not valid %s", headerLines[1]),
 			}

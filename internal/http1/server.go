@@ -73,7 +73,7 @@ func HandleConnection(conn net.Conn, mux http.Handler) error {
 					response = NewResponse(conn)
 					response.Header().Set("Connection", "close")
 					response.HTTPVersion = "HTTP/1.1"
-					response.WriteHeader(http.StatusBadRequest)
+					response.WriteHeader(StatusBadRequest)
 					return response.Send()
 				}
 				return fmt.Errorf("read request body: %w", readErr)

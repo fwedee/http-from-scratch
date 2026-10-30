@@ -21,7 +21,7 @@ type Response struct {
 }
 
 func NewResponse(conn net.Conn) *Response {
-	return &Response{connection: conn, ResponseHeader: make(http.Header), StatusCode: http.StatusOK}
+	return &Response{connection: conn, ResponseHeader: make(http.Header), StatusCode: StatusOK}
 }
 
 func (r *Response) Header() http.Header {
@@ -30,7 +30,7 @@ func (r *Response) Header() http.Header {
 
 func (r *Response) Write(data []byte) (n int, err error) {
 	if !r.wroteHeader {
-		r.WriteHeader(http.StatusOK)
+		r.WriteHeader(StatusOK)
 	}
 	return r.body.Write(data)
 }
