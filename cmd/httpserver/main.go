@@ -1,27 +1,35 @@
 package main
 
 import (
+	"context"
 	"httpServer/internal/handler"
 	"httpServer/internal/http1"
+	"httpServer/internal/telemetry"
 	"log"
-	"os"
-	"runtime/trace"
 )
 
 const addr = ":8080"
 
 func main() {
 
-	f, err := os.Create("trace.out")
-	if err != nil {
-		log.Fatalf("failed to create trace output file: %v", err)
-	}
-	defer f.Close()
+	// for debugging purposes
+	// 	f, err := os.Create("trace.out")
+	// 	if err != nil {
+	// 		log.Fatalf("failed to create trace output file: %v", err)
+	// 	}
+	// 	defer f.Close()
+	//
+	// 	if err := trace.Start(f); err != nil {
+	// 		log.Fatalf("failed to start trace: %v", err)
+	// 	}
+	// 	defer trace.Stop()
 
-	if err := trace.Start(f); err != nil {
-		log.Fatalf("failed to start trace: %v", err)
+	// init tracing
+	tp, err := telemetry.InitTracer()
+	if err != nil {
+		log.Fatalf("failed to initialize tracer: %v", err)
 	}
-	defer trace.Stop()
+	defer tp.Shutdown(context.Background())
 
 	mux := http1.DefaultMux
 	// Just some example Handler Funcs
@@ -35,7 +43,10 @@ func main() {
 	//
 	// 	})
 
-	if err := http1.ListenAndServe(addr, mux); err != nil {
+	// adding telemetry middleware
+	wrappedMux := telemetry.TracingMiddleWare(mux)
+
+	if err := http1.ListenAndServe(addr, wrappedMux); err != nil {
 		panic(err)
 	}
 }
