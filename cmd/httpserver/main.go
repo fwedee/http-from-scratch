@@ -17,7 +17,7 @@ func main() {
 	addr, there := os.LookupEnv("ADDRESS")
 	if !there {
 		log.Fatal("Address was not set in environment variable")
-		os.Exit(1)
+		os.Exit(3)
 	}
 
 	// for debugging purposes
@@ -55,7 +55,8 @@ func main() {
 	wrappedMux := telemetry.TracingMiddleWare(mux)
 
 	if err := http1.ListenAndServe(addr, wrappedMux); err != nil {
-		panic(err)
+		log.Fatal("Address was not set in environment variable")
+		os.Exit(3)
 	}
 }
 

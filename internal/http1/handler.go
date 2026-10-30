@@ -2,7 +2,9 @@ package http1
 
 import (
 	"errors"
+	"log"
 	"net/http"
+	"os"
 	"strings"
 	"sync"
 )
@@ -34,10 +36,12 @@ func (m *MyMux) Handle(pattern string, handler Handler) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	if pattern == "" {
-		panic("http: empty pattern")
+		log.Fatal("HTTP1Handler: empty route detected")
+		os.Exit(3)
 	}
 	if handler == nil {
-		panic("http: nil handler")
+		log.Fatal("HTTP1Handler: handler is nil detected")
+		os.Exit(3)
 	}
 	if m.m == nil {
 		m.m = make(map[string]map[string]muxEntry)
@@ -50,7 +54,8 @@ func (m *MyMux) Handle(pattern string, handler Handler) {
 		splitPatter := strings.Split(pattern, " ")
 		method = splitPatter[0]
 		if _, ok := supporedHTTPMethods[strings.ToUpper(method)]; !ok {
-			panic("http: method not supported ")
+			log.Fatal("HTTP1Handler: http method not supported")
+			os.Exit(3)
 		}
 		uri = splitPatter[1]
 	}
@@ -62,10 +67,12 @@ func (m *MyMux) Handle(pattern string, handler Handler) {
 			if _, exists := m.m[uri][method]; !exists {
 				m.m[uri][method] = muxEntry{h: handler, pattern: pattern}
 			} else {
-				panic("same pattern is already registered: " + pattern)
+				log.Fatal("Pattern is already registered")
+				os.Exit(3)
 			}
 		} else {
-			panic("method is already registered")
+			log.Fatal("Method is already registered")
+			os.Exit(3)
 		}
 	}
 	if _, exists := m.m[uri][method]; !exists {
